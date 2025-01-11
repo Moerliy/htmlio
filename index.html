@@ -10,6 +10,21 @@
   <body>
     <div class="container">
       <section class="tools-section">
+        <div class="column">
+          <label class="title">Advanced Tools</label>
+          <ul class="options">
+            <li class="option">
+              <button class="undo">
+                <img class="image" src="icons/undo.svg" alt="" />
+              </button>
+            </li>
+            <li class="option">
+              <button class="redo">
+                <img class="image" src="icons/redo.svg" alt="" />
+              </button>
+            </li>
+          </ul>
+        </div>
         <div class="row">
           <label class="title">Preset Shapes</label>
           <ul class="options">
@@ -24,6 +39,14 @@
             <li class="option tool" id="triangle">
               <img src="icons/triangle.svg" alt="" />
               <span>Triangle</span>
+            </li>
+            <li class="option tool" id="line">
+              <img src="icons/line.svg" alt="" />
+              <span>Line</span>
+            </li>
+            <li class="option tool" id="polygon">
+              <img src="icons/polygon.svg" alt="" />
+              <span>Polygon</span>
             </li>
             <li class="option">
               <input type="checkbox" id="fill-color" />
@@ -66,18 +89,6 @@
       </section>
       <section class="drawing-board">
         <canvas></canvas>
-      </section>
-      <section class="layers-section">
-        <div class="row">
-          <label class="title">Layers</label>
-          <ul id="layers-list" class="options layers">
-            <li class="option layer" data-layer="0">
-              <span>Layer 1</span>
-              <button class="delete-layer">×</button>
-            </li>
-          </ul>
-          <button id="add-layer">Add Layer</button>
-        </div>
       </section>
     </div>
   </body>

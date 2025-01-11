@@ -14,7 +14,9 @@ let prevMouseX,
   isDrawing = false,
   selectedTool = "brush",
   brushWidth = 5,
-  selectedColor = "#000";
+  selectedColor = "#000",
+  undoStack = [],
+  redoStack = [];
 
 const setCanvasBackground = () => {
   ctx.fillStyle = "#fff";
@@ -28,6 +30,36 @@ window.addEventListener("load", () => {
   canvas.height = canvas.offsetHeight;
   setCanvasBackground();
 });
+
+const saveState = () => {
+  undoStack.push(canvas.toDataURL());
+  redoStack = [];
+};
+
+const undo = () => {
+  if (undoStack.length === 0) return;
+  redoStack.push(canvas.toDataURL());
+  const previousState = undoStack.pop();
+  const img = new Image();
+  img.src = previousState;
+  img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+};
+
+const redo = () => {
+  if (redoStack.length === 0) return;
+  undoStack.push(canvas.toDataURL());
+  const nextState = redoStack.pop();
+  const img = new Image();
+  img.src = nextState;
+  img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+};
+
+const drawLine = (e) => {
+  ctx.beginPath();
+  ctx.moveTo(prevMouseX, prevMouseY);
+  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.stroke();
+};
 
 const drawRect = (e) => {
   // if fillColor isn't checked draw rect with border else draw rect with background
@@ -67,6 +99,23 @@ const drawTriangle = (e) => {
   fillColor.checked ? ctx.fill() : ctx.stroke();
 };
 
+const drawPolygon = (e, sides = 6) => {
+  const radius = Math.sqrt(
+    Math.pow(e.offsetX - prevMouseX, 2) + Math.pow(e.offsetY - prevMouseY, 2),
+  );
+  const angleStep = (2 * Math.PI) / sides;
+
+  ctx.beginPath();
+  for (let i = 0; i < sides; i++) {
+    const x = prevMouseX + radius * Math.cos(angleStep * i);
+    const y = prevMouseY + radius * Math.sin(angleStep * i);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  fillColor.checked ? ctx.fill() : ctx.stroke();
+};
+
 const startDraw = (e) => {
   isDrawing = true;
   prevMouseX = e.offsetX;
@@ -92,6 +141,10 @@ const drawing = (e) => {
     drawRect(e);
   } else if (selectedTool === "circle") {
     drawCircle(e);
+  } else if (selectedTool === "line") {
+    drawLine(e);
+  } else if (selectedTool === "polygon") {
+    drawPolygon(e, 5); // Default to pentagon
   } else {
     drawTriangle(e);
   }
@@ -140,6 +193,31 @@ saveImg.addEventListener("click", () => {
   link.click();
 });
 
+document.addEventListener("keydown", (e) => {
+  // Check if Control or Command is pressed with the key
+  const isCtrlPressed = e.ctrlKey || e.metaKey;
+
+  // Ctrl + Z for Undo
+  if (isCtrlPressed && e.key === "z") {
+    e.preventDefault();
+    undo();
+  }
+
+  // Ctrl + Y for Redo
+  if (isCtrlPressed && e.key === "y") {
+    e.preventDefault();
+    redo();
+  }
+});
+
+document.querySelector(".undo").addEventListener("click", undo);
+document.querySelector(".redo").addEventListener("click", redo);
+
 canvas.addEventListener("mousedown", startDraw);
 canvas.addEventListener("mousemove", drawing);
 canvas.addEventListener("mouseup", () => (isDrawing = false));
+// Save state on drawing start
+canvas.addEventListener("mousedown", (e) => {
+  saveState();
+  startDraw(e);
+});
