@@ -201,6 +201,17 @@ section {
   transition: all 0.3s ease;
 }
 
+.clear-storage:hover {
+  color: #fff;
+  background: #6c757d;
+}
+
+.buttons .clear-storage {
+  color: #6c757d;
+  border: 1px solid #6c757d;
+  transition: all 0.3s ease;
+}
+
 .clear-canvas:hover {
   color: #fff;
   background: #6c757d;

@@ -6,7 +6,8 @@ const canvas = document.querySelector("canvas"),
   colorPicker = document.querySelector("#color-picker"),
   clearCanvas = document.querySelector(".clear-canvas"),
   saveImg = document.querySelector(".save-img"),
-  ctx = canvas.getContext("2d");
+  ctx = canvas.getContext("2d"),
+  clearStorage = document.querySelector(".clear-storage");
 
 let prevMouseX,
   prevMouseY,
@@ -148,6 +149,7 @@ const drawing = (e) => {
   } else {
     drawTriangle(e);
   }
+  saveCanvasToLocalStorage();
 };
 
 const getTouchPosition = (touch) => {
@@ -195,6 +197,7 @@ const drawingTouch = (e) => {
   } else {
     drawTriangle({ offsetX: position.x, offsetY: position.y });
   }
+  saveCanvasToLocalStorage();
 };
 
 const stopDrawTouch = (e) => {
@@ -219,30 +222,7 @@ colorBtns.forEach((btn) => {
   });
 });
 
-// toolBtns.forEach((btn) => {
-//   btn.addEventListener("click", () => {
-//     // click event for tool options
-//     // remove active class from previous, add current to clicked
-//     document.querySelector(".options .active").classList.remove("active");
-//     btn.classList.add("active");
-//     selectedTool = btn.id;
-//   });
-// });
-
 sizeSlider.addEventListener("change", () => (brushWidth = sizeSlider.value));
-
-// colorBtns.forEach((btn) => {
-//   btn.addEventListener("click", () => {
-//     // add click event to color buttons
-//     // remove selected class from previous and add current clicked
-//     document.querySelector(".options .selected").classList.remove("selected");
-//     btn.classList.add("selected");
-//     // pass selected btn background color selectedColor value
-//     selectedColor = window
-//       .getComputedStyle(btn)
-//       .getPropertyValue("background-color");
-//   });
-// });
 
 colorPicker.addEventListener("change", () => {
   // pass picked color value from color picker to last color btn background
@@ -282,54 +262,54 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-const resizeCanvas = () => {
-  // Save the current canvas content
-  const tempCanvas = document.createElement("canvas");
-  tempCanvas.width = canvas.width;
-  tempCanvas.height = canvas.height;
-  const tempCtx = tempCanvas.getContext("2d");
-  tempCtx.drawImage(canvas, 0, 0);
-
-  // Get the old canvas dimensions
-  const oldWidth = canvas.width;
-  const oldHeight = canvas.height;
-
-  // Resize the canvas
-  canvas.width = window.innerWidth * 0.9; // 90% of screen width
-  canvas.height = window.innerHeight * 0.6; // 60% of screen height
-
-  // Scale the content to fit the new canvas dimensions
-  const scaleX = canvas.width / oldWidth;
-  const scaleY = canvas.height / oldHeight;
-
-  ctx.drawImage(
-    tempCanvas,
-    0,
-    0,
-    oldWidth,
-    oldHeight,
-    0,
-    0,
-    canvas.width,
-    canvas.height,
-  );
-  setCanvasBackground();
-
-  // Adjust the drawing context scale if needed (e.g., brush strokes, grid alignment)
-  ctx.scale(scaleX, scaleY);
-};
-
 const adjustBrushSize = () => {
   const scaleX = canvas.width / oldWidth;
   const scaleY = canvas.height / oldHeight;
   brushWidth *= Math.max(scaleX, scaleY); // Scale brushWidth proportionally
 };
 
-resizeCanvas(); // Call adjustBrushSize after resizing
-
-window.addEventListener("resize", resizeCanvas);
 window.addEventListener("load", () => {
-  resizeCanvas();
+  loadCanvasFromLocalStorage();
+});
+
+const saveCanvasToLocalStorage = () => {
+  const canvasData = {
+    dataURL: canvas.toDataURL(),
+    width: canvas.width,
+    height: canvas.height,
+  };
+  localStorage.setItem("drawingAppCanvas", JSON.stringify(canvasData));
+};
+
+const loadCanvasFromLocalStorage = () => {
+  const storedData = localStorage.getItem("drawingAppCanvas");
+  if (storedData) {
+    const { dataURL, width, height } = JSON.parse(storedData);
+    const img = new Image();
+    img.src = dataURL;
+    img.onload = () => {
+      // Scale and adjust content if dimensions differ
+      const scaleX = canvas.width / width;
+      const scaleY = canvas.height / height;
+      ctx.drawImage(
+        img,
+        0,
+        0,
+        width,
+        height,
+        0,
+        0,
+        canvas.width,
+        canvas.height,
+      );
+    };
+  }
+};
+
+clearStorage.addEventListener("click", () => {
+  localStorage.removeItem("drawingAppCanvas");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  setCanvasBackground();
 });
 
 document.querySelector(".undo").addEventListener("click", undo);
