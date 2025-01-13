@@ -150,30 +150,99 @@ const drawing = (e) => {
   }
 };
 
+const getTouchPosition = (touch) => {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: touch.clientX - rect.left,
+    y: touch.clientY - rect.top,
+  };
+};
+
+const startDrawTouch = (e) => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  const position = getTouchPosition(touch);
+  prevMouseX = position.x;
+  prevMouseY = position.y;
+  isDrawing = true;
+  ctx.beginPath();
+  ctx.lineWidth = brushWidth;
+  ctx.strokeStyle = selectedColor;
+  ctx.fillStyle = selectedColor;
+  snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+};
+
+const drawingTouch = (e) => {
+  if (!isDrawing) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const position = getTouchPosition(touch);
+  ctx.putImageData(snapshot, 0, 0);
+
+  if (selectedTool === "brush" || selectedTool === "eraser") {
+    // if selected tool is eraser then strokeStyle white
+    ctx.strokeStyle = selectedTool === "eraser" ? "#fff" : selectedColor;
+    ctx.lineTo(position.x, position.y);
+    ctx.stroke();
+  } else if (selectedTool === "rectangle") {
+    drawRect({ offsetX: position.x, offsetY: position.y });
+  } else if (selectedTool === "circle") {
+    drawCircle({ offsetX: position.x, offsetY: position.y });
+  } else if (selectedTool === "line") {
+    drawLine({ offsetX: position.x, offsetY: position.y });
+  } else if (selectedTool === "polygon") {
+    drawPolygon({ offsetX: position.x, offsetY: position.y }, 5);
+  } else {
+    drawTriangle({ offsetX: position.x, offsetY: position.y });
+  }
+};
+
+const stopDrawTouch = (e) => {
+  isDrawing = false;
+};
+
 toolBtns.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    // click event for tool options
-    // remove active class from previous, add current to clicked
+  btn.addEventListener("pointerdown", () => {
     document.querySelector(".options .active").classList.remove("active");
     btn.classList.add("active");
     selectedTool = btn.id;
   });
 });
 
-sizeSlider.addEventListener("change", () => (brushWidth = sizeSlider.value));
-
 colorBtns.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    // add click event to color buttons
-    // remove selected class from previous and add current clicked
+  btn.addEventListener("pointerdown", () => {
     document.querySelector(".options .selected").classList.remove("selected");
     btn.classList.add("selected");
-    // pass selected btn background color selectedColor value
     selectedColor = window
       .getComputedStyle(btn)
       .getPropertyValue("background-color");
   });
 });
+
+// toolBtns.forEach((btn) => {
+//   btn.addEventListener("click", () => {
+//     // click event for tool options
+//     // remove active class from previous, add current to clicked
+//     document.querySelector(".options .active").classList.remove("active");
+//     btn.classList.add("active");
+//     selectedTool = btn.id;
+//   });
+// });
+
+sizeSlider.addEventListener("change", () => (brushWidth = sizeSlider.value));
+
+// colorBtns.forEach((btn) => {
+//   btn.addEventListener("click", () => {
+//     // add click event to color buttons
+//     // remove selected class from previous and add current clicked
+//     document.querySelector(".options .selected").classList.remove("selected");
+//     btn.classList.add("selected");
+//     // pass selected btn background color selectedColor value
+//     selectedColor = window
+//       .getComputedStyle(btn)
+//       .getPropertyValue("background-color");
+//   });
+// });
 
 colorPicker.addEventListener("change", () => {
   // pass picked color value from color picker to last color btn background
@@ -187,10 +256,13 @@ clearCanvas.addEventListener("click", () => {
 });
 
 saveImg.addEventListener("click", () => {
-  const link = document.createElement("a");
-  link.download = `${Date.now()}.jpg`;
-  link.href = canvas.toDataURL();
-  link.click();
+  const imgURL = canvas.toDataURL();
+  if (window.confirm("Do you want to save this image?")) {
+    const link = document.createElement("a");
+    link.download = `${Date.now()}.jpg`;
+    link.href = imgURL;
+    link.click();
+  }
 });
 
 document.addEventListener("keydown", (e) => {
@@ -210,12 +282,29 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+// const resizeCanvas = () => {
+//   canvas.width = window.innerWidth * 0.9; // 90% of screen width
+//   canvas.height = window.innerHeight * 0.6; // 60% of screen height
+//   setCanvasBackground();
+// };
+//
+// window.addEventListener("resize", resizeCanvas);
+// window.addEventListener("load", () => {
+//   resizeCanvas();
+// });
+
 document.querySelector(".undo").addEventListener("click", undo);
 document.querySelector(".redo").addEventListener("click", redo);
 
 canvas.addEventListener("mousedown", startDraw);
 canvas.addEventListener("mousemove", drawing);
 canvas.addEventListener("mouseup", () => (isDrawing = false));
+
+// Add touch event listeners
+canvas.addEventListener("touchstart", startDrawTouch);
+canvas.addEventListener("touchmove", drawingTouch);
+canvas.addEventListener("touchend", stopDrawTouch);
+
 // Save state on drawing start
 canvas.addEventListener("mousedown", (e) => {
   saveState();
