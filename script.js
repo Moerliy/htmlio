@@ -282,16 +282,55 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-// const resizeCanvas = () => {
-//   canvas.width = window.innerWidth * 0.9; // 90% of screen width
-//   canvas.height = window.innerHeight * 0.6; // 60% of screen height
-//   setCanvasBackground();
-// };
-//
-// window.addEventListener("resize", resizeCanvas);
-// window.addEventListener("load", () => {
-//   resizeCanvas();
-// });
+const resizeCanvas = () => {
+  // Save the current canvas content
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = canvas.width;
+  tempCanvas.height = canvas.height;
+  const tempCtx = tempCanvas.getContext("2d");
+  tempCtx.drawImage(canvas, 0, 0);
+
+  // Get the old canvas dimensions
+  const oldWidth = canvas.width;
+  const oldHeight = canvas.height;
+
+  // Resize the canvas
+  canvas.width = window.innerWidth * 0.9; // 90% of screen width
+  canvas.height = window.innerHeight * 0.6; // 60% of screen height
+
+  // Scale the content to fit the new canvas dimensions
+  const scaleX = canvas.width / oldWidth;
+  const scaleY = canvas.height / oldHeight;
+
+  ctx.drawImage(
+    tempCanvas,
+    0,
+    0,
+    oldWidth,
+    oldHeight,
+    0,
+    0,
+    canvas.width,
+    canvas.height,
+  );
+  setCanvasBackground();
+
+  // Adjust the drawing context scale if needed (e.g., brush strokes, grid alignment)
+  ctx.scale(scaleX, scaleY);
+};
+
+const adjustBrushSize = () => {
+  const scaleX = canvas.width / oldWidth;
+  const scaleY = canvas.height / oldHeight;
+  brushWidth *= Math.max(scaleX, scaleY); // Scale brushWidth proportionally
+};
+
+resizeCanvas(); // Call adjustBrushSize after resizing
+
+window.addEventListener("resize", resizeCanvas);
+window.addEventListener("load", () => {
+  resizeCanvas();
+});
 
 document.querySelector(".undo").addEventListener("click", undo);
 document.querySelector(".redo").addEventListener("click", redo);
